@@ -327,6 +327,54 @@
       line-height: 1.5;
     }
 
+    /* Live Clock */
+    .live-clock {
+      position: fixed;
+      top: 20px;
+      left: 24px;
+      z-index: 100;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 8px 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.78rem;
+      color: var(--text-mid);
+      letter-spacing: 0.06em;
+      transition: background 0.3s, border-color 0.2s;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+      user-select: none;
+    }
+
+    .clock-dot {
+      width: 7px;
+      height: 7px;
+      background: var(--accent);
+      border-radius: 50%;
+      animation: pulse 1s ease infinite;
+      flex-shrink: 0;
+    }
+
+    .clock-time {
+      color: var(--text);
+      font-size: 0.85rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+    }
+
+    .clock-date {
+      color: var(--text-muted);
+      font-size: 0.65rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      border-left: 1px solid var(--border);
+      padding-left: 10px;
+      margin-left: 2px;
+    }
+
     /* Theme toggle */
     .theme-toggle {
       position: fixed;
@@ -454,13 +502,20 @@
   </style>
 </head>
 <body>
+  <!-- Live Clock -->
+  <div class="live-clock">
+    <span class="clock-dot"></span>
+    <span class="clock-time" id="clockTime">00:00:00</span>
+    <span class="clock-date" id="clockDate">Mon, 01 Jan</span>
+  </div>
+
   <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">
     <span class="toggle-icon" id="themeIcon">☀️</span>
     <span id="themeLabel">Light</span>
   </button>
   <div class="page-wrap">
     <div class="header">
-      <div class="badge"><span class="badge-dot"></span> IT Support Desk</div>
+      <div class="badge"><span class="badge-dot"></span> Aurigo IT Support Desk</div>
       <h1>Walk-in <span>Check-In</span></h1>
       <p class="subtitle">Fill in your details below and a technician<br>will be with you shortly.</p>
     </div>
@@ -483,14 +538,17 @@
           <label for="department">Department <span class="req">*</span></label>
           <select id="department">
             <option value="">— Select —</option>
-            <option>Engineering</option>
-            <option>Finance</option>
-            <option>HR</option>
-            <option>Legal</option>
-            <option>Marketing</option>
-            <option>Operations</option>
-            <option>Sales</option>
-            <option>Other</option>
+            <option>GRC</option>
+            <option>SRE(CloudOps)</option>
+            <option>DBAOps</option>
+            <option>DevOps</option>
+            <option>ISO</option>
+            <option>ITSupport</option>
+            <option>Salesforce Support</option>
+            <option>BCDR</option>
+            <option>Vendor Management</option>
+            <option>Security Engineering</option>
+            <option>Performance Engineering</option>
           </select>
           <span class="field-error" id="deptErr">Please select your department.</span>
         </div>
@@ -498,12 +556,10 @@
           <label for="location">Location <span class="req">*</span></label>
           <select id="location">
             <option value="">— Select —</option>
-            <option>Head Office – Floor 1</option>
-            <option>Head Office – Floor 2</option>
-            <option>Head Office – Floor 3</option>
-            <option>Branch – North</option>
-            <option>Branch – South</option>
-            <option>Remote</option>
+            <option>Ind-Bengalore</option>
+            <option>US-Austin</option>
+            <option>Can-Cambridge</option>
+            <option>SA-Cape Town</option>
           </select>
           <span class="field-error" id="locErr">Please select your location.</span>
         </div>
@@ -585,11 +641,51 @@
       <div class="ticket-ref" id="ticketRef">TKT-000000</div>
       <p style="color:var(--text-muted); font-size:0.85rem;">Please take a seat — a technician will call your name.</p>
       <br>
-      <button class="btn-reset" onclick="resetForm()">Submit Another Request</button>
+      <p style="color:var(--text-mid); font-size:0.82rem; margin-bottom: 16px;">
+        Returning to new request in <span id="countdown" style="color:var(--accent); font-weight:700; font-family:'DM Mono',monospace;">10</span>s
+      </p>
+      <button class="btn-reset" onclick="resetForm()">Submit Another Request Now</button>
     </div>
   </div>
 
   <script>
+    // ── Live Clock ──────────────────────────────────────────────
+    function updateClock() {
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2, '0');
+      const mm = String(now.getMinutes()).padStart(2, '0');
+      const ss = String(now.getSeconds()).padStart(2, '0');
+      document.getElementById('clockTime').textContent = `${hh}:${mm}:${ss}`;
+
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const day = days[now.getDay()];
+      const date = String(now.getDate()).padStart(2, '0');
+      const month = months[now.getMonth()];
+      document.getElementById('clockDate').textContent = `${day}, ${date} ${month}`;
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    // ── Auto-reset countdown ─────────────────────────────────────
+    let countdownTimer = null;
+
+    function startCountdown() {
+      let secs = 10;
+      document.getElementById('countdown').textContent = secs;
+      clearInterval(countdownTimer);
+      countdownTimer = setInterval(() => {
+        secs--;
+        const el = document.getElementById('countdown');
+        if (el) el.textContent = secs;
+        if (secs <= 0) {
+          clearInterval(countdownTimer);
+          resetForm();
+        }
+      }, 1000);
+    }
+
+    // ── Theme toggle ─────────────────────────────────────────────
     function toggleTheme() {
       const isLight = document.documentElement.classList.toggle('light');
       document.getElementById('themeIcon').textContent = isLight ? '🌙' : '☀️';
@@ -709,14 +805,14 @@
         if (response.ok) {
           const json = await response.json().catch(() => ({}));
           const ticketId = json.ticket_id || json.id || Math.floor(Math.random() * 900000 + 100000);
-          showSuccess(TKT-);
+          showSuccess(`TKT-${ticketId}`);
         } else {
           throw new Error('Server error');
         }
       } catch (e) {
         console.error('Submission error:', e);
         const ticketId = Math.floor(Math.random() * 900000 + 100000);
-        showSuccess(TKT-);
+        showSuccess(`TKT-${ticketId}`);
       } finally {
         btn.classList.remove('loading');
       }
@@ -727,9 +823,11 @@
       document.getElementById('ticketRef').textContent = ref;
       const ss = document.getElementById('successScreen');
       ss.style.display = 'block';
+      startCountdown();
     }
 
     function resetForm() {
+      clearInterval(countdownTimer);
       document.getElementById('successScreen').style.display = 'none';
       document.getElementById('formCard').style.display = 'block';
       document.querySelector('form') && document.querySelector('form').reset();
